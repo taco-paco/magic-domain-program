@@ -1,0 +1,11 @@
+[package]
+name = "magic-domain-program"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# solana
+solana = { package = "solana-program", version = "2.1" }
+
+# serialization/deserialization
+borsh = { version = "1.5.3", features = [ "derive" ] }
