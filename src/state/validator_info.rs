@@ -1,13 +1,13 @@
 use std::net::SocketAddrV4;
 
 use borsh::{BorshDeserialize, BorshSerialize};
-use solana::pubkey::Pubkey;
+use solana_program::pubkey::Pubkey;
 
 use crate::{consts::VALIDATOR_INFO_SEED, ID};
 
 use super::features::FeaturesSet;
 
-#[derive(BorshSerialize, BorshDeserialize)]
+#[derive(Debug, BorshSerialize, BorshDeserialize)]
 pub struct ValidatorInfo {
     pub identity: Pubkey,
     /// NOTE: usage of variable length URLs introduces a lot of headache,

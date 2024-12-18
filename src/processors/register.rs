@@ -1,5 +1,5 @@
 use borsh::BorshSerialize;
-use solana::{
+use solana_program::{
     account_info::{next_account_info, AccountInfo},
     program::invoke_signed,
     program_error::ProgramError,
@@ -21,7 +21,7 @@ pub fn process_registration<'a>(
     let system_program = next_account_info(&mut accounts)?;
 
     if !(payer.is_signer && *payer.key == ix.0.identity) {
-        return Err(ProgramError::IncorrectAuthority);
+        return Err(ProgramError::InvalidArgument);
     }
 
     if pda_account.lamports() != 0 {
@@ -34,8 +34,8 @@ pub fn process_registration<'a>(
         return Err(ProgramError::InvalidArgument);
     }
 
-    let mut data = Vec::with_capacity(size_of::<ValidatorInfo>());
-    ix.0.serialize(&mut data).expect("infallible");
+    let mut data = Vec::with_capacity(std::mem::size_of::<ValidatorInfo>());
+    ix.0.serialize(&mut data)?;
 
     let space = data.len();
     let rent = Rent::get()?.minimum_balance(data.len());

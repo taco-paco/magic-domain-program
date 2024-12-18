@@ -1,5 +1,5 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use solana::{
+use solana_program::{
     account_info::{next_account_info, AccountInfo},
     program_error::ProgramError,
 };
@@ -18,7 +18,7 @@ pub fn process_sync_info<'a>(
     }
 
     if !(payer.is_signer && *payer.key == ix.identity) {
-        return Err(ProgramError::IncorrectAuthority);
+        return Err(ProgramError::InvalidArgument);
     }
 
     if pda_account.lamports() == 0 {
@@ -48,7 +48,7 @@ pub fn process_sync_info<'a>(
         info.features = features;
     }
 
-    info.serialize(&mut *data).expect("infallible");
+    info.serialize(&mut *data)?;
 
     Ok(())
 }

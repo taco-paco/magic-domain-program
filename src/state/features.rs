@@ -1,8 +1,8 @@
-use std::ops::{BitAndAssign, BitOrAssign, Not};
+use std::ops::BitOrAssign;
 
 use borsh::{BorshDeserialize, BorshSerialize};
 
-#[derive(Default, BorshSerialize, BorshDeserialize)]
+#[derive(Debug, Default, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
 pub struct FeaturesSet([u64; 4]);
 
 /// A first approximation of features supported by ER validator
@@ -10,18 +10,22 @@ pub struct FeaturesSet([u64; 4]);
 #[repr(u8)]
 pub enum Feature {
     Randomness = 0,
-    // .. and nothing else comes to mind, 256 should be more than enough
+    // .. and nothing else comes to mind, 256 should be more than enough, may be we should even
+    // reduce it to 128, so that no space is wasted
 }
 
 impl FeaturesSet {
     const SEGMENT: usize = u64::BITS as usize;
 
-    pub fn add(&mut self, feature: Feature) {
+    pub fn activate(mut self, feature: Feature) -> Self {
         let (segment, offset) = self.locate(feature);
         segment.bitor_assign(1 << offset);
+        self
     }
 
-    pub fn remove(&mut self, feature: Feature) {
+    #[cfg(test)]
+    fn deactivate(&mut self, feature: Feature) {
+        use std::ops::{BitAndAssign, Not};
         let (segment, offset) = self.locate(feature);
         segment.bitand_assign((1_u64 << offset).not());
     }
@@ -43,9 +47,8 @@ impl FeaturesSet {
 #[cfg(test)]
 #[test]
 fn test_features_op() {
-    let mut features = FeaturesSet::default();
-    features.add(Feature::Randomness);
+    let mut features = FeaturesSet::default().activate(Feature::Randomness);
     assert!(features.contains(Feature::Randomness));
-    features.remove(Feature::Randomness);
+    features.deactivate(Feature::Randomness);
     assert!(!features.contains(Feature::Randomness));
 }

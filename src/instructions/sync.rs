@@ -1,7 +1,7 @@
 use std::net::SocketAddrV4;
 
 use borsh::{BorshDeserialize, BorshSerialize};
-use solana::pubkey::Pubkey;
+use solana_program::pubkey::Pubkey;
 
 use crate::{consts::VALIDATOR_INFO_SEED, state::features::FeaturesSet, ID};
 

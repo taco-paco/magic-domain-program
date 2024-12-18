@@ -1,5 +1,5 @@
 use borsh::BorshDeserialize;
-use solana::{
+use solana_program::{
     account_info::{next_account_info, AccountInfo},
     program_error::ProgramError,
 };
@@ -21,7 +21,7 @@ pub fn process_unregistration<'a>(
     }
 
     if !(payer.is_signer && *payer.key == ix.0) {
-        return Err(ProgramError::IncorrectAuthority);
+        return Err(ProgramError::InvalidArgument);
     }
 
     if pda_account.lamports() == 0 {
@@ -30,6 +30,7 @@ pub fn process_unregistration<'a>(
     let data = pda_account.try_borrow_data()?;
     let info =
         ValidatorInfo::try_from_slice(&data).map_err(|_| ProgramError::InvalidAccountData)?;
+    drop(data);
 
     if ix.0 != info.identity {
         return Err(ProgramError::InvalidArgument);
