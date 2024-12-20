@@ -42,10 +42,8 @@ jobs:
       with:
         path: |
           ~/.cargo/
-          target/debug
-        key: ${{ runner.os }}-cargo-debug-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-debug-
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     - name: Install rustfmt and clippy
       run: rustup component add rustfmt clippy
     - name: Run rustfmt
@@ -68,16 +66,14 @@ jobs:
       with:
         path: |
           ~/.cargo/
-          target/debug
-        key: ${{ runner.os }}-cargo-debug-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-debug-
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     - uses: actions/cache@v4
       with:
         path: |
-          target/release
-          target/sbf-solana-solana
-        key: ${{ runner.os }}-cargo-release-${{ hashFiles('**/Cargo.lock') }}
+          ~/.cargo/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     - uses: actions/cache@v4
       name: cache solana cli
       id: cache-solana
