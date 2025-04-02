@@ -1,13 +1,10 @@
-use std::{net::SocketAddrV4, str::FromStr};
-
 use mdp::{
-    instructions::{
-        register::RegisterInstruction, sync::SyncInfoInstruction,
-        unregister::UnregisterInstruction, Instruction,
-    },
+    instructions::{sync::SyncInstruction, version::v0::SyncRecordV0, Instruction},
     state::{
         features::{Feature, FeaturesSet},
-        validator_info::ValidatorInfo,
+        record::{CountryCode, ErRecord},
+        status::ErStatus,
+        version::v0::RecordV0,
     },
 };
 use program_test::{BanksClient, BanksClientError, ProgramTest};
@@ -25,7 +22,7 @@ use sdk::{
 pub struct TestEnv {
     pub banks: BanksClient,
     pub identity: Keypair,
-    pub info: ValidatorInfo,
+    pub record: ErRecord,
 }
 
 pub async fn setup() -> TestEnv {
@@ -40,29 +37,32 @@ pub async fn setup() -> TestEnv {
     );
 
     let features = FeaturesSet::default().activate(Feature::Randomness);
-    let info = ValidatorInfo {
+    let record = ErRecord::V0(RecordV0 {
         identity: identity.pubkey(),
-        addr: SocketAddrV4::from_str("241.132.2.41:9324").unwrap(),
+        status: ErStatus::Active,
+        addr: "https://241.132.2.41:9324/".to_string(),
         block_time_ms: 50,
-        fees: 1000,
+        base_fee: 1000,
         features,
-    };
+        load_average: 1_000_000,
+        country_code: CountryCode::from("083"),
+    });
     let (banks, _, _) = test.start().await;
 
     TestEnv {
         banks,
         identity,
-        info,
+        record,
     }
 }
 
 pub async fn register(
     banks: &mut BanksClient,
-    info: ValidatorInfo,
+    record: ErRecord,
     identity: &Keypair,
 ) -> Result<(), BanksClientError> {
-    let pda = info.pda().0;
-    let ix = Instruction::Register(RegisterInstruction(info));
+    let pda = record.pda().0;
+    let ix = Instruction::Register(record);
     let ix = SolanaInstruction::new_with_borsh(
         mdp::ID,
         &ix,
@@ -82,7 +82,7 @@ pub async fn unregister(
     identity: &Keypair,
     pda: Pubkey,
 ) -> Result<(), BanksClientError> {
-    let ix = Instruction::Unregister(UnregisterInstruction(identity.pubkey()));
+    let ix = Instruction::Unregister(identity.pubkey());
     let ix = SolanaInstruction::new_with_borsh(
         mdp::ID,
         &ix,
@@ -98,19 +98,22 @@ pub async fn unregister(
     banks.process_transaction(tx).await
 }
 
-pub async fn sync_info(
+pub async fn sync(
     banks: &mut BanksClient,
     identity: &Keypair,
-    info: ValidatorInfo,
+    record: ErRecord,
 ) -> Result<(), BanksClientError> {
-    let pda = info.pda().0;
-    let ix = Instruction::SyncInfo(SyncInfoInstruction {
-        identity: info.identity,
-        addr: Some(info.addr),
-        block_time_ms: Some(info.block_time_ms),
-        fees: Some(info.fees),
-        features: Some(info.features),
-    });
+    let pda = record.pda().0;
+    let ix = Instruction::Sync(SyncInstruction::V0(SyncRecordV0 {
+        identity: *record.identity(),
+        status: Some(record.status()),
+        addr: Some(record.addr().to_owned()),
+        block_time_ms: Some(record.block_time_ms()),
+        base_fee: Some(record.base_fee()),
+        features: Some(record.features().clone()),
+        load_average: Some(record.load_average()),
+        country_code: Some(record.country_code()),
+    }));
     let ix = SolanaInstruction::new_with_borsh(
         mdp::ID,
         &ix,
